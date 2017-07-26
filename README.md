@@ -174,6 +174,8 @@ You can use `hexdump` command which creates a hexdump of the given input file, w
 Make sure that you are able to compile this file with rest of the given files.
 You can add any helper functions you want in pa10.c itself.
 
+`40 % points will be deducted for any valgrind error.`
+
 You can run executable pa10 with the following command :
 
 `./pa10 gophers gophers_sorted gophers_huffman gophers_header`
