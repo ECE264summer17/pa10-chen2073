@@ -1,0 +1,180 @@
+
+This assignment is a continuation of pa08.
+
+# Learning Goals :
+In this assignment you will work with
+  * Bit Operations
+
+# Background
+
+In pa08 we have already seen how to build a huffman tree and how to traverse it. Now we will see how to compress the code that we obtained from traversing the huffman tree.
+
+We'll use the string `go go gophers` as an example. 
+
+The huffman tree that we get for this particular string is as follows: 
+
+![gophers7.jpg](http://i.imgur.com/ZEQ9KVM.jpg)
+
+To build the code for every character, we start from the root node and travel to every leaf node corresoinding to the character. We denote every left branch as '0' and every right branch as '1'. (Note that '0' and '1' are characters and not bits). We obtain the code for every character according as shown in the table mentioned below :
+
+
+							| Character | Binary code |
+							| --------- |  ---------- |
+							|  '  '     |  101        | 
+							|  'e'      |  1100       | 
+							|  'g'      |  00         |
+							|  'h'      |  1101       |
+							|  'o'      |  01         | 
+							|  'p'      |  1110       |
+							|  'r'      |  1111       | 
+							|  's'      |  100        |
+
+## Header Information
+To compress the string/file into huffman code , we read one character at a time and write the sequence of bits that encodes each character.
+We must also store some initial information in the compressed file that will be used by the decompression program.That is the header information.
+
+Basically we must store the tree used to compress the original file. This tree is used by the decompression program. We can store the tree at the beginning of the file. We will do a pre-order traversal of the binary tree generated in the previous step, writing each node visited. We must differentiate leaf nodes from internal/non-leaf nodes. One way to do this is write a single bit for each node, say 1 for leaf and 0 for non-leaf. For leaf nodes, you will also need to write the ASCII character stored. For non-leaf nodes there's no information that needs to be written, just the bit that indicates there's an internal node. There should also be a 0 bit at the end to signify end of the tree information.
+
+### Example :
+Encoding tree for string `go go gophers` can be represented as following using pre-order traversal :
+
+`001g1o001s1 001e1h01p1r0`
+
+Here ASCII character `1` is written before each leaf node followed by character stored at the leaf node, ASCII character `0` is written for a non leaf node and ASCII character `0` is added at the end to signify end of the tree.
+Notice here space between 1 and 0 is the space character.
+
+We can further reduce total number of bits if we use bits `1` and `0` in place of ASCII characters `'1'` and `'0'` to represent leaf and non leaf nodes and the end of the tree.
+Note that ASCII characters stored at each node are still written using 8 bits. 
+
+In particular, it is not possible to write just one single bit to a file, minimum unit of memory you can access in C is a byte. We should accumulate 8 bits in a buffer and then write it to the file. If we are writing  the above data for tree using preorder traversal, first three bits in the first byte would be 001 (first two non leaf nodes represented by two 0 bits and then a leaf node represented by leaf node) followed by 5 most significant bits of ASCII value of character 'g'. Remaining 3 bits of character 'g' would go as first three most significant bits of the second byte.
+
+If the binary representation of ASCII value of character `'g'` is `01100111` and `'o'` is `01101111`, first two bytes would be
+
+`00101100 11110110`
+
+(note that space is provided between two bytes only for clarity; in the file itself all of those bits would be consecutive.)
+
+The last byte may not contain 8 meaningful bits, you should pad it with `0` bits in remaining places.
+
+You can look at the function given [here](https://github.com/yunghsianglu/IntermediateCProgramming/blob/3eee24660f99a641cc2a445733bd154595ff1915/Ch24/utility.c) which accumulates bits and writes a byte to a file.
+
+## Bit-wise operations 
+
+You would have to use bit-wise operations in one or more functions to
+complete this assignment.  In particular, these are operations that
+would be useful:
+```
+>> : shift right operator
+<< : shift left operator
+&  : bit-wise and operator
+|  : bit-wise or operator
+```
+Note that when a shift right operator is applied to signed representation
+(char, short, int, or long), the signed bit (bit in the most significant
+position of a 8-bit, 16-bit, 32-bit, or 64-bit number) is preserved.  
+In other words, after shifting, the polarity of the number, i.e., whether
+the number is positive or negative, is preserved.  For an unsigned 
+representation, 0 is shifted into the most significant bit.   
+
+Suppose we are using an int to store a char (i.e., only the least significant
+byte of an int is used to store the useful information), and we are 
+interested in splitting the char into two parts: 3 most significant
+bits and 5 least significant bits, and then exchange the parts such
+that the 3 bits now occupy the least significant positions and the
+5 bits now occupy the most signficant positions:
+
+int old_ch;  // the original char
+
+int mask = 0xFF;  // a mask of all ones, 0x means hexadecimal, F is 1111
+
+int MS_mask = (mask >> 5) << 5;  // create a mask of 3 bits of 1 at most significant positions, 0xE0
+
+int LS_mask = mask >> 3;         // create a mask of 5 bits of 1 at least significant positions, 0x1F
+
+int LS_3_bits = (MS_mask & old_ch) >> 5;  // get the least significant 3 bits of the new byte
+
+int MS_5_bits = (LS_mask & old_ch) << 3;  // get the most significant 5 bits of the new byte
+
+int new_ch = LS_3_bits | MS_5_bits;  // get the new char 
+
+
+Note that by using an int to store a char, we do not have to worry how
+the polarity may be affected by shifting. 
+
+In this code fragment, we use shifting to create masks (MS_mask and LS_mask)
+of 1 bits from the variable mask.  These masks are used to extract 3 bits and 
+5 bits from old_ch using the bit-wise and operator.  Moreover, the extracted 
+bits are moved to correct positions using the shift operators.  The
+variable new_ch is obtained by combining the extracted (and shifted) bits
+using the bit-wise or operator.
+
+Note that there are many ways to accomplish the above.  We chose a (laborious)
+way that, we think, demonstrates the operators and the use of masks.
+
+## How to check your output 
+
+You can use "diff" command to check your output against those provided
+in the expected folder.
+
+A useful utility is the hexdump command.  The hexdump shows the contents
+of a file in the hexadecimal representation.  For example, "hexdump gophers_header"gives you
+
+```
+0000000 f62c 40f2 5985 454b 72c1 80b9          
+000000c
+```
+
+The left most column is the starting byte count (in hexadecimal).
+The remaining columns in a line provide two bytes in a column, with
+the first two symbols representing the more significant byte and
+the next two symbols representing the less significant byte.  
+Therefore, the 0-th byte in the gophers_header file is 0x2c or "00101100",
+the 1-st byte in the gophers_header file is 0xf6 or "11110110", and the
+2-nd byte is 0xf2 or "11110010" and so on.
+
+If you compare 0th byte and 1st byte with `00101100 11110110` which we obtained in previous section as compressed version of representtion of `001g1o` (ascii character o's only 5 MSB bits are represented), we can see that the data is same.
+
+Thus you can compare hexdump of expected file and your output file to check correctness of your output file.
+
+# What you have to do?
+
+We have provided the starter code that creates an array `asciiCount` of size `ASCII_SIZE` which stores the count of each character at the index of that character’s ASCII value. Value of `ASCII_SIZE` is `256`, defined in `huffman.h` file.
+
+We have also provided code for creating sroted linked list and bulding huffman tree and traversing through the tree. If you were stuck in pa08, you can go through the code and understand its implementaion and structure. Notice how we use helper functions whenever needed.
+
+You will have to complete function `huffmanHeadingBits` in `pa10.c` which writes the encoded representation of huffman tree using bit manipulation.  
+
+You can write your own helper functions in pa10.c and declare at top of the same file. 
+
+We will compile your pa10.c with our huffman.c (which we have given to you) and compare your ouputfile3 with our expected file with header inforamtion.
+
+You will have to use bit-wise operations for generating the header information. You should use "`<<`", "`>>`" , "`|`" and "`&`" bit-wise operators and different masks to split the character into chunks of bits desired and shift operators to move the extracted bits to correct positions.
+
+Incomplete file pa10.c given to you reads an input file (its filename will be provided to the program as `argv[1]`) and produce three output files :
+`pa10 inputFileName outputFilename1 outputFilename2 outputFilename3`
+
+**Output file 1** consists of  only the characters that appear in the input file and their count, separated by a ‘:’ character. `We have provided necessary functions which provide this file for you.` 
+
+**Output file 2** consists of characters and stream of 0 and 1 (‘0’ and ‘1’ are characters and not bits) corresponding to the Huffman code of the character, seperated by ':' character. `We have provided neccessary functions which provide this file for you.`
+
+**Output file 3** should contain the header information which is the representation of the encoded binary tree using pre-order traversal. The last byte in the output file may need padding bits of 0 in least significant positions. Sample files `gophers_header`, `basic_header`, `woods_header` and `para_header` are provided for corresponding input files.
+
+## Testing your code
+
+We have provided you with code needed to build and traverse through the huffman tree. You will have to traverse through the tree using pre-order and represent the header data in the way explained above in the README. 
+
+We have provided you with input files and expected files in the inputs and expected folders respectively. 
+You should use `‘diff’` command to ensure that there is no difference between the expected files and your output files for the given input files.
+You can use `hexdump` command which creates a hexdump of the given input file, which shows the contents of a file in hexadecimal representation for byte-wise comparison of expected header file and your header file. 
+
+## What to turn in :
+
+1. pa10.c with completed huffmanHeadingBits function
+ 
+Make sure that you are able to compile this file with rest of the given files.
+You can add any helper functions you want in pa10.c itself.
+
+You can run executable pa10 with the following command :
+
+`./pa10 gophers gophers_sorted gophers_huffman gophers_header`
+
