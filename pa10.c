@@ -10,6 +10,8 @@ void writeSortedAsciiCount(char *filename, ListNode *list)
       fprintf(stderr, "can't open the output file\n.");
    }
    printList(list, fp);
+
+   fclose(fp);
 }
   
 
@@ -69,20 +71,93 @@ void printHuffmanTree(char *filename, TreeNode *huffman)
       fprintf(stderr, "can't open the output file\n");
    }
    huffmanPrint(huffman,fp);
+
+   fclose(fp);
 }
 
 
 void huffmanHeadingBits(char *filename, TreeNode *huffman)
 {
 
-	// Write your code here
+	FILE * fptr = fopen(filename, "w");
+	
+	if(fptr == NULL)
+	{
+		return;
+	}
 
+	unsigned char whichbit = 0;
+	unsigned char curbyte = 0;
+	
+	HeaderHelper(huffman, fptr, &whichbit, &curbyte);
+	
+	while(whichbit != 0)
+	{
+		writeBit(fptr, 0, &whichbit, &curbyte);
+	}
 
+	fclose(fptr);
+}
 
+int writeBit(FILE * fptr, unsigned char bit, unsigned char * whichbit, unsigned char * curbyte)
+{
+	if((*whichbit) == 0)
+	{
+		*curbyte = 0;
+	}
 
+	unsigned char temp = bit << (7-(*whichbit));
+	*curbyte |= temp;
+	int value = 0;
+	if((*whichbit) == 7)
+	{
+		int ret;
+		ret = fwrite(curbyte, sizeof(unsigned char), 1, fptr);
+		
+		if(ret == 1)
+		{
+			value = 1;
+		}
+		else
+		{
+			value = -1;
+		}
+	}
 
+	*whichbit = ((*whichbit) + 1) % 8;
 
+return value;
+}
 
+void char2bits(FILE * fptr, int ch, unsigned char * whichbit, unsigned char * curbyte)
+{
+	unsigned char mask = 0x80;
+	while(mask > 0)
+	{
+		writeBit(fptr, (ch & mask) == mask, whichbit, curbyte);
+		mask >>= 1;
+	}
+}
+
+void HeaderHelper(TreeNode * tn, FILE * fptr, unsigned char * whichbit, unsigned char * curbyte)
+{
+	if(tn == NULL)
+	{
+		return;
+	}
+	TreeNode *lc = tn->left;
+	TreeNode *rc = tn->right;
+	if((lc == NULL) && (rc == NULL))
+	{
+		writeBit(fptr, 1, whichbit, curbyte);
+		char2bits(fptr, tn->label, whichbit, curbyte);
+		return;
+	}
+	else{
+		writeBit(fptr, 0, whichbit, curbyte);
+	}
+	HeaderHelper(lc, fptr, whichbit, curbyte);
+	HeaderHelper(rc, fptr, whichbit, curbyte);
 
 }
 
@@ -97,7 +172,6 @@ int main(int argc, char **argv)
       fprintf(stderr, "can't open the input file.  Quit.\n");
       return EXIT_FAILURE;
    }
-
    /* read and count the occurrences of characters */
    long *asciiCount = countLetters(inFile);
    fclose(inFile);
@@ -115,7 +189,6 @@ int main(int argc, char **argv)
       fprintf(stderr, "cannot allocate memory to store the ascii in priority queue.  Quit.\n");
       return EXIT_FAILURE;
    }
-
    writeSortedAsciiCount(argv[2], list);
 
    /* build the huffman tree */
@@ -130,7 +203,6 @@ int main(int argc, char **argv)
    
    
    huffmanHeadingBits(argv[4], huffman);
-   
    
    freeHuffmanTree(huffman);
 
