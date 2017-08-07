@@ -1,4 +1,4 @@
-#ifndef pa10_HELPER
+#ifndef PA10_HELPER
 #define PA10_HELPER
 
 #include <stdio.h>
