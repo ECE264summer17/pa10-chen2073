@@ -1,0 +1,35 @@
+Tests for basic:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for fox:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for gophers:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for ironic:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for para:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for prideandprejudice:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for unusual:
+TEST CASE 1 (Header Output): 
+PASS
+Tests for woods:
+TEST CASE 1 (Header Output): 
+PASS
+TEST CASE: valgrind
+memcheck.log.basic_0
+memcheck.log.fox_0
+memcheck.log.gophers_0
+memcheck.log.ironic_0
+memcheck.log.para_0
+memcheck.log.prideandprejudice_0
+memcheck.log.unusual_0
+memcheck.log.woods_0
+ PASS
+Points: 8.000000 
